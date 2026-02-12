@@ -23,10 +23,17 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             print("Received from ESP:", data)
 
-            # Broadcast to all connected browsers
+            # Send to all connected browser clients
             for client in connected_clients:
-                await client.send_text(f"new_data:{data}")
+                try:
+                    await client.send_text(f"new_data:{data}")
+                except:
+                    pass
 
     except WebSocketDisconnect:
         print("Client Disconnected")
         connected_clients.remove(websocket)
+    except Exception as e:
+        print("WebSocket Error:", e)
+        if websocket in connected_clients:
+            connected_clients.remove(websocket)
