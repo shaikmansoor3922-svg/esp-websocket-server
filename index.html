@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+        .chart-container {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            height: 300px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .data-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sensor Dashboard</h1>
+
+
+    <p><a href="/data">View the received data as a table</a></p>
+
+
+    
+    
+    <table class="data-table" id="liveDataTable">
+        <tr>
+            <th>Sensor 1</th>
+            <th>Sensor 2</th>
+            <th>Sensor 3</th>
+            <th>Sensor 4</th>
+            <th>Sensor 5</th>
+            <th>Sensor 6</th>
+            <th>Sensor 7</th>
+            <th>Sensor 8</th>
+            <th>Sensor 9</th>
+            <th>Sensor 10</th>
+            <th>Sensor 11</th>
+            <th>Sensor 12</th>
+            <th>Sensor 13</th>
+            <th>Sensor 14</th>
+            <th>Sensor 15</th>
+            <th>Sensor 16</th>
+        </tr>
+        <tr id="currentData">
+            <td>-</td><td>-</td><td>-</td><td>-</td>
+            <td>-</td><td>-</td><td>-</td><td>-</td>
+            <td>-</td><td>-</td><td>-</td><td>-</td>
+            <td>-</td><td>-</td><td>-</td><td>-</td>
+        </tr>
+    </table>
+
+    <div class="grid-container" id="chartsContainer">
+        <!-- Charts will be dynamically inserted here -->
+    </div>
+
+    <script>
+        // Initialize charts array
+        const charts = [];
+        const maxDataPoints = 50;
+        const datasets = Array(16).fill().map(() => []);
+        
+        // Create charts for each sensor
+        function createCharts() {
+            const container = document.getElementById('chartsContainer');
+            
+            for (let i = 0; i < 16; i++) {
+                const canvas = document.createElement('canvas');
+                const div = document.createElement('div');
+                div.className = 'chart-container';
+                div.appendChild(canvas);
+                container.appendChild(div);
+
+                const chart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: `Sensor ${i + 1}`,
+                            data: [],
+                            borderColor: `hsl(${(i * 360 / 16)}, 70%, 50%)`,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        animation: {
+                            duration: 0
+                        }
+                    }
+                });
+                charts.push(chart);
+            }
+        }
+
+        // Connect to WebSocket
+        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+        
+        ws.onmessage = function(event) {
+            if (event.data.startsWith('new_data:')) {
+                const data = event.data.substring(9).split(',').map(Number);
+                updateDashboard(data);
+            }
+        };
+
+        function updateDashboard(data) {
+            // Update table
+            const cells = document.getElementById('currentData').getElementsByTagName('td');
+            for (let i = 0; i < data.length; i++) {
+                cells[i].textContent = data[i].toFixed(2);
+            }
+
+            // Update charts
+            const timestamp = new Date().toLocaleTimeString();
+            
+            for (let i = 0; i < charts.length; i++) {
+                const chart = charts[i];
+                
+                // Add new data
+                chart.data.labels.push(timestamp);
+                chart.data.datasets[0].data.push(data[i]);
+
+                // Remove old data if we have too many points
+                if (chart.data.labels.length > maxDataPoints) {
+                    chart.data.labels.shift();
+                    chart.data.datasets[0].data.shift();
+                }
+
+                chart.update();
+            }
+        }
+
+        // Initialize charts when page loads
+        createCharts();
+    </script>
+</body>
+</html>
