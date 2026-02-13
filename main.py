@@ -86,7 +86,7 @@ def get_history():
 # ------------------------
 @app.get("/status")
 def device_status():
-    if time.time() - last_update_time < 3:
+    if time.time() - last_update_time < 2:
         return {"device": "connected"}
     else:
         return {"device": "disconnected"}
