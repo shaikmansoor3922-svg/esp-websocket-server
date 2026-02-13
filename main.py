@@ -45,12 +45,13 @@ def get_history():
     return {"history": all_data}
 
 
-# Dashboard checks connection
 @app.get("/status")
 def get_status():
     current_time = time.time()
 
-    if current_time - last_update_time < 3:
+    # Give 10 seconds tolerance
+    if current_time - last_update_time < 10:
         return {"device": "connected"}
     else:
         return {"device": "disconnected"}
+
