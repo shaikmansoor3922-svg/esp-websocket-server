@@ -16,6 +16,7 @@ templates = Jinja2Templates(directory="templates")
 
 latest_data = []
 all_data = []
+history_data = []
 last_update_time = 0
 
 class SensorData(BaseModel):
