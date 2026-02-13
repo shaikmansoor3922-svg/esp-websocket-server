@@ -23,4 +23,5 @@ def upload_data(data: SensorData):
 
 @app.get("/latest")
 def get_latest():
-    return {"values": latest_data}
+    return {"values": latest_data if latest_data else [0]*16}
+
