@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 import time
+from fastapi import Query
 
 app = FastAPI()
 
@@ -77,8 +78,24 @@ def get_latest():
 # FULL HISTORY
 # ------------------------
 @app.get("/history")
-def get_history():
-    return {"history": history_data}
+def get_history(start: str = Query(None), end: str = Query(None)):
+
+    if not start and not end:
+        return {"history": history_data}
+
+    filtered = []
+
+    for record in history_data:
+        record_time = record["timestamp"]
+
+        if start and record_time < start:
+            continue
+        if end and record_time > end:
+            continue
+
+        filtered.append(record)
+
+    return {"history": filtered}
 
 
 # ------------------------
