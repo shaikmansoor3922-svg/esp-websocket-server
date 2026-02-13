@@ -11,6 +11,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Request
 import time
 from fastapi import Query
+from fastapi.responses import StreamingResponse
+from io import StringIO
+
 
 app = FastAPI()
 
@@ -96,6 +99,43 @@ def get_history(start: str = Query(None), end: str = Query(None)):
         filtered.append(record)
 
     return {"history": filtered}
+# ------------------------
+# download
+# ------------------------
+
+@app.get("/download")
+def download_data(start: str = None, end: str = None):
+
+    filtered = history_data
+
+    # Filter by time if provided
+    if start:
+        filtered = [d for d in filtered if d["timestamp"] >= start]
+    if end:
+        filtered = [d for d in filtered if d["timestamp"] <= end]
+
+    # Create CSV in memory
+    output = StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    header = ["Timestamp"] + [f"Sensor {i}" for i in range(1, 17)]
+    writer.writerow(header)
+
+    # Rows
+    for record in filtered:
+        row = [record["timestamp"]] + record["values"]
+        writer.writerow(row)
+
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=sensor_data.csv"
+        },
+    )
 
 
 # ------------------------
