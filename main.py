@@ -12,27 +12,49 @@ from fastapi import Request
 import time
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
 
+# -------------------------
+# GLOBAL STORAGE
+# -------------------------
 latest_data = []
-all_data = []
 history_data = []
 last_update_time = 0
 
+
+# -------------------------
+# DATA MODEL
+# -------------------------
 class SensorData(BaseModel):
     values: List[float]
 
+
+# -------------------------
+# ROOT (Dashboard Page)
+# -------------------------
 @app.get("/", response_class=HTMLResponse)
-def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+def dashboard():
+    with open("dashboard.html", "r") as f:
+        return f.read()
 
 
-# ESP POSTS HERE
+# -------------------------
+# HISTORY PAGE
+# -------------------------
+@app.get("/historypage", response_class=HTMLResponse)
+def history_page():
+    with open("history.html", "r") as f:
+        return f.read()
+
+
+# -------------------------
+# RECEIVE DATA FROM ESP
+# -------------------------
 @app.post("/upload")
 def upload_data(data: SensorData):
     global latest_data, history_data, last_update_time
 
     latest_data = data.values
+
     history_data.append({
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "values": data.values
@@ -43,59 +65,32 @@ def upload_data(data: SensorData):
     return {"message": "Data received successfully"}
 
 
-
-# Dashboard fetches live data
+# -------------------------
+# GET LATEST VALUES
+# -------------------------
 @app.get("/latest")
 def get_latest():
     return {"values": latest_data}
 
 
-# Dashboard fetches full history
+# -------------------------
+# GET FULL HISTORY
+# -------------------------
 @app.get("/history")
 def get_history():
     return {"history": history_data}
 
 
+# -------------------------
+# DEVICE STATUS CHECK
+# -------------------------
 @app.get("/status")
-def get_status():
-    current_time = time.time()
+def device_status():
+    global last_update_time
 
-    # Give 10 seconds tolerance
-    if current_time - last_update_time < 10:
+    if time.time() - last_update_time < 3:
         return {"device": "connected"}
     else:
         return {"device": "disconnected"}
 
-@app.get("/download")
-def download_data(start: str, end: str):
-
-    start_dt = datetime.strptime(start, "%Y-%m-%dT%H:%M")
-    end_dt = datetime.strptime(end, "%Y-%m-%dT%H:%M")
-
-    filename = "filtered_data.csv"
-
-    with open(filename, mode="w", newline="") as file:
-        writer = csv.writer(file)
-
-        header = ["Timestamp"] + [f"Sensor {i}" for i in range(1, 17)]
-        writer.writerow(header)
-
-        for row in history_data:
-            row_time = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
-
-            if start_dt <= row_time <= end_dt:
-                writer.writerow([row["timestamp"]] + row["values"])
-
-    return FileResponse(filename, media_type="text/csv", filename="sensor_data.csv")
-
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard():
-    with open("dashboard.html") as f:
-        return f.read()
-
-
-@app.get("/history_page", response_class=HTMLResponse)
-def history_page():
-    with open("history.html") as f:
-        return f.read()
 
