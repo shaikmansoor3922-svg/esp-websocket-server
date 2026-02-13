@@ -12,7 +12,7 @@
 </head>
 <body>
 
-<h2>Full Sensor History</h2>
+<h2>Filter Data By Time</h2>
 
 <label>Start Time:</label>
 <input type="datetime-local" id="startTime">
@@ -20,10 +20,13 @@
 <label>End Time:</label>
 <input type="datetime-local" id="endTime">
 
-<button onclick="downloadData()">Download Selected Data</button>
-<button onclick="window.location.href='/dashboard'">Back to Dashboard</button>
+<button onclick="loadFilteredData()">Apply Filter</button>
 
-<br><br>
+<button onclick="window.location.href='/'">
+    Back to Dashboard
+</button>
+
+<hr>
 
 <table>
     <thead>
@@ -85,6 +88,55 @@ setInterval(loadHistory, 2000);
 loadHistory();
 
 </script>
+
+    <script>
+
+async function loadFilteredData() {
+
+    const startInput = document.getElementById("startTime").value;
+    const endInput = document.getElementById("endTime").value;
+
+    let url = "/history";
+
+    if (startInput || endInput) {
+        url += "?";
+        if (startInput) {
+            url += "start=" + startInput.replace("T", " ") + ":00";
+        }
+        if (startInput && endInput) {
+            url += "&";
+        }
+        if (endInput) {
+            url += "end=" + endInput.replace("T", " ") + ":00";
+        }
+    }
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const body = document.getElementById("historyBody");
+    body.innerHTML = "";
+
+    data.history.forEach((record, index) => {
+
+        let row = "<tr>";
+        row += "<td>" + (index + 1) + "</td>";
+        row += "<td>" + record.timestamp + "</td>";
+
+        record.values.forEach(value => {
+            row += "<td>" + value.toFixed(2) + "</td>";
+        });
+
+        row += "</tr>";
+
+        body.innerHTML += row;
+    });
+}
+
+window.onload = loadFilteredData;
+
+</script>
+
 
 </body>
 </html>
