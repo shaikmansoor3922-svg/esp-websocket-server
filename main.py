@@ -1,42 +1,40 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import List
-import time
 
 app = FastAPI()
 
+templates = Jinja2Templates(directory="templates")
+
+# Store all historical data
+all_data = []
 latest_data = []
-data_history = []
-last_received_time = 0
 
 class SensorData(BaseModel):
     values: List[float]
 
-@app.get("/")
-def home():
-    return {"status": "Server Running"}
+# Dashboard page
+@app.get("/", response_class=HTMLResponse)
+def dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
+# Upload data from ESP
 @app.post("/upload")
 def upload_data(data: SensorData):
-    global latest_data, data_history, last_received_time
+    global latest_data, all_data
     latest_data = data.values
-    data_history.append(data.values)
-    last_received_time = time.time()   # store current time
+    all_data.append(data.values)
     print("Received:", latest_data)
     return {"message": "Data received successfully"}
 
+# Latest values (for live dashboard)
 @app.get("/latest")
 def get_latest():
     return {"values": latest_data}
 
+# All historical values (for table button)
 @app.get("/history")
 def get_history():
-    return {"history": data_history}
-
-@app.get("/status")
-def get_status():
-    # If no data for more than 5 seconds → disconnected
-    if time.time() - last_received_time > 5:
-        return {"device": "disconnected"}
-    else:
-        return {"device": "connected"}
+    return {"data": all_data}
