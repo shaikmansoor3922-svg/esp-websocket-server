@@ -163,7 +163,7 @@ setInterval(async () => {
     if (data.values && data.values.length === 16) {
         updateDashboard(data.values);
     }
-}, 300);
+}, 200);
 
 // Load History Data
 setInterval(async () => {
@@ -182,7 +182,7 @@ setInterval(async () => {
         body.innerHTML += tr;
     });
 
-}, 300);
+}, 500);
 
 // Device Status
 setInterval(async () => {
@@ -197,7 +197,7 @@ setInterval(async () => {
         status.textContent = "🔴 Device Disconnected";
         status.style.color = "red";
     }
-}, 300);
+}, 1000);
 
 createCharts();
 
