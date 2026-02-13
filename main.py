@@ -41,7 +41,7 @@ def dashboard(request: Request):
 # ------------------------
 # HISTORY PAGE
 # ------------------------
-@app.get("/historypage", response_class=HTMLResponse)
+@app.get("/history_page", response_class=HTMLResponse)
 def history_page(request: Request):
     return templates.TemplateResponse("history.html", {"request": request})
 
