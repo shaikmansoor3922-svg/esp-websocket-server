@@ -149,6 +149,10 @@ def download_data(start: str = None, end: str = None):
 # ------------------------
 @app.get("/status")
 def device_status():
+     global last_update_time
+
+    current_time = time.time()
+
     if last_update_time == 0:
         return {"device": "disconnected"}
 
