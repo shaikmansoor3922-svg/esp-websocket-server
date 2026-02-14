@@ -152,13 +152,16 @@ def download_data(start: str = None, end: str = None):
 # ------------------------
 @app.get("/status")
 def device_status():
+    if last_update_time == 0:
+        return {"device": "disconnected"}
+
     current_time = time.time()
     diff = current_time - last_update_time
 
     if diff > 5:
-        return {"device": "disconnected", "delay": diff}
+        return {"device": "disconnected"}
     else:
-        return {"device": "connected", "delay": diff}
+        return {"device": "connected"}
 
 
 @app.get("/debug_time")
