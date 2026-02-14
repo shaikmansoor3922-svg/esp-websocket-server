@@ -91,26 +91,34 @@ def get_latest():
 # FULL HISTORY
 # ------------------------
 @app.get("/history")
-def get_history(start: str = Query(None), end: str = Query(None)):
+def get_history(
+    start: str = Query(None),
+    end: str = Query(None),
+    limit: int = 50
+):
 
+    # ✅ If no filter → return latest 50 only
     if not start and not end:
-        return {"history": history_data}
+        return {"history": history_data[-limit:]}
 
     filtered = []
 
+    # Convert start & end once (not inside loop)
+    start_time = datetime.strptime(start, "%Y-%m-%d %H:%M:%S") if start else None
+    end_time = datetime.strptime(end, "%Y-%m-%d %H:%M:%S") if end else None
+
     for record in history_data:
 
-        record_time = datetime.strptime(record["timestamp"], "%Y-%m-%d %H:%M:%S")
+        record_time = datetime.strptime(
+            record["timestamp"],
+            "%Y-%m-%d %H:%M:%S"
+        )
 
-        if start:
-            start_time = datetime.strptime(start, "%Y-%m-%d %H:%M:%S")
-            if record_time < start_time:
-                continue
+        if start_time and record_time < start_time:
+            continue
 
-        if end:
-            end_time = datetime.strptime(end, "%Y-%m-%d %H:%M:%S")
-            if record_time > end_time:
-                continue
+        if end_time and record_time > end_time:
+            continue
 
         filtered.append(record)
 
