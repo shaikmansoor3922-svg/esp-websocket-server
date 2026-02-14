@@ -214,24 +214,34 @@ setInterval(async () => {
 
 // Device Status
 // Device Status (Correct Method)
-setInterval(async () => {
-    const response = await fetch('/status');
-    const data = await response.json();
+async function checkDeviceStatus() {
+    try {
+        const response = await fetch('/status');
+        const data = await response.json();
 
-    const status = document.getElementById("deviceStatus");
+        const status = document.getElementById("deviceStatus");
 
-    if (data.device === "connected") {
-        status.textContent = "🟢 Device Connected";
-        status.style.color = "green";
-    } else {
-        status.textContent = "🔴 Device Disconnected";
-        status.style.color = "red";
+        if (data.device === "connected") {
+            status.textContent = "🟢 Device Connected";
+            status.style.color = "#16a34a";
+        } else {
+            status.textContent = "🔴 Device Disconnected";
+            status.style.color = "#dc2626";
+        }
+
+    } catch (error) {
+        const status = document.getElementById("deviceStatus");
+        status.textContent = "🔴 Server Unreachable";
+        status.style.color = "#dc2626";
     }
 
-}, 500);
+    // Wait 2 seconds before next check
+    setTimeout(checkDeviceStatus, 2000);
+}
 
+// Start once
+checkDeviceStatus();
 
-createCharts();
 
 </script>
 
