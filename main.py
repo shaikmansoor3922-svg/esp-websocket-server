@@ -76,9 +76,15 @@ def upload_data(data: SensorData):
 # ------------------------
 # LATEST DATA
 # ------------------------
+latest_data = {
+    "timestamp": "",
+    "values": [0]*16
+}
+
 @app.get("/latest")
 def get_latest():
-    return {"values": latest_data}
+    return latest_data
+
 
 
 # ------------------------
