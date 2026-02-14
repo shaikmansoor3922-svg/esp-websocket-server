@@ -205,28 +205,49 @@ async function loadHistory(start=null, end=null) {
     });
 }
 
-function applyFilter() {
+async function applyFilter() {
 
-    const start = formatDateTime(document.getElementById("startTime").value);
-    const end = formatDateTime(document.getElementById("endTime").value);
+    const start = document.getElementById("startTime").value;
+    const end = document.getElementById("endTime").value;
 
-    clearInterval(autoRefresh);
-    loadHistory(start, end);
+    if (!start || !end) {
+        alert("Select start and end time");
+        return;
+    }
+
+    const formattedStart = start.replace("T", " ") + ":00";
+    const formattedEnd = end.replace("T", " ") + ":00";
+
+    const response = await fetch(`/filter?start=${formattedStart}&end=${formattedEnd}`);
+    const data = await response.json();
+
+    renderTable(data.history);
 }
 
-function downloadData() {
+function downloadCSV(data) {
 
-    const start = formatDateTime(document.getElementById("startTime").value);
-    const end = formatDateTime(document.getElementById("endTime").value);
+    let csv = "Timestamp,";
 
-    let url = "/download";
-
-    if (start || end) {
-        url += "?";
-        if (start) url += "start=" + start;
-        if (start && end) url += "&";
-        if (end) url += "end=" + end;
+    for (let i = 1; i <= 16; i++) {
+        csv += "Sensor " + i + ",";
     }
+
+    csv += "\n";
+
+    data.forEach(row => {
+        csv += row.timestamp + ",";
+        row.values.forEach(v => csv += v + ",");
+        csv += "\n";
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "filtered_data.csv";
+    a.click();
+}
 
     window.location.href = url;
 }
