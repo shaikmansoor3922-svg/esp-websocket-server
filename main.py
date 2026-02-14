@@ -53,20 +53,23 @@ def history_page(request: Request):
 # ------------------------
 # RECEIVE DATA
 # ------------------------
+upload_counter = 0
+
 @app.post("/upload")
 def upload_data(data: SensorData):
-    global latest_data, history_data, last_update_time
+    global latest_data, history_data, last_update_time, upload_counter
 
     latest_data = data.values
+    upload_counter += 1
+    last_update_time = time.time()
 
     history_data.append({
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "values": data.values
     })
 
-    last_update_time = time.time()
-
     return {"message": "Data received successfully"}
+
 
 
 # ------------------------
@@ -149,16 +152,22 @@ def download_data(start: str = None, end: str = None):
 # ------------------------
 @app.get("/status")
 def device_status():
-    global last_update_time
-
-    if last_update_time == 0:
-        return {"device": "disconnected"}
-
     current_time = time.time()
+    diff = current_time - last_update_time
 
-    if current_time - last_update_time > 5:
-        return {"device": "disconnected"}
+    if diff > 5:
+        return {"device": "disconnected", "delay": diff}
     else:
-        return {"device": "connected"}
+        return {"device": "connected", "delay": diff}
+
+
+@app.get("/debug_time")
+def debug_time():
+    return {
+        "last_update_time": last_update_time,
+        "current_time": time.time(),
+        "difference": time.time() - last_update_time
+    }
+
 
 
