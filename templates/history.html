@@ -2,64 +2,153 @@
 <html>
 <head>
     <title>Full Data History</title>
-    <style>
-        body { font-family: Arial; padding:20px; }
-        table { width:100%; border-collapse: collapse; margin-top:20px; }
-        th, td { border:1px solid #ddd; padding:8px; text-align:center; }
-        th { background:#f2f2f2; }
-        button { padding:10px; margin:10px 5px 10px 0; cursor:pointer; }
-        input { padding:5px; margin-right:10px; }
-    </style>
-</head>
-    <!DOCTYPE html>
-<html>
-<head>
-    <title>Full Data History</title>
-    <style>
-        body { font-family: Arial; padding:20px; }
 
-        .header {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f9;
+            color: #333;
+        }
+
+        /* ===== HEADER ===== */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: linear-gradient(135deg, #1f2937, #111827);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .header-container h1 {
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 1px;
         }
 
         .logo {
-            height:60px;
+            height: 60px;
         }
 
-        table { width:100%; border-collapse: collapse; margin-top:20px; }
-        th, td { border:1px solid #ddd; padding:8px; text-align:center; }
-        th { background:#f2f2f2; }
-        button { padding:10px; margin:10px 5px 10px 0; cursor:pointer; }
-        input { padding:5px; margin-right:10px; }
+        /* ===== FILTER CARD ===== */
+        .filter-card {
+            background: white;
+            margin: 30px auto;
+            padding: 25px;
+            width: 95%;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        .filter-card label {
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        input {
+            padding: 8px;
+            margin-right: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            box-shadow: 0 4px 10px rgba(37,99,235,0.3);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37,99,235,0.5);
+        }
+
+        .secondary-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .secondary-btn:hover {
+            background: #059669;
+        }
+
+        .danger-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .danger-btn:hover {
+            background: #dc2626;
+        }
+
+        /* ===== TABLE ===== */
+        table {
+            width: 95%;
+            margin: 20px auto 40px auto;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        th {
+            background: #1f2937;
+            color: white;
+            padding: 10px;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f3f4f6;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="header">
-    <h2>Filter Data By Time</h2>
-    <img src="/static/logo.png" class="logo">
+<!-- ===== HEADER ===== -->
+<div class="header-container">
+    <h1>Full Data History</h1>
+    <img src="/static/logo.png" alt="MechNerve Logo" class="logo">
 </div>
 
-<body>
+<!-- ===== FILTER SECTION ===== -->
+<div class="filter-card">
 
-<h2>Filter Data By Time</h2>
+    <label>Start Time:</label>
+    <input type="datetime-local" id="startTime">
 
-<label>Start Time:</label>
-<input type="datetime-local" id="startTime">
+    <label>End Time:</label>
+    <input type="datetime-local" id="endTime">
 
-<label>End Time:</label>
-<input type="datetime-local" id="endTime">
+    <br><br>
 
-<br>
+    <button class="primary-btn" onclick="applyFilter()">Apply Filter</button>
+    <button class="secondary-btn" onclick="downloadData()">Download Selected Data</button>
+    <button class="danger-btn" onclick="window.location.href='/'">Back to Dashboard</button>
 
-<button onclick="applyFilter()">Apply Filter</button>
-<button onclick="downloadData()">Download Selected Data</button>
-<button onclick="goDashboard()">Back to Dashboard</button>
+</div>
 
-<hr>
-
+<!-- ===== TABLE ===== -->
 <table>
     <thead>
         <tr>
@@ -73,17 +162,17 @@
     <tbody id="historyBody"></tbody>
 </table>
 
+
+<!-- ===== YOUR ORIGINAL JS (UNCHANGED LOGIC) ===== -->
 <script>
 
 let autoRefresh;
 
-// Convert datetime-local to backend format
 function formatDateTime(value) {
     if (!value) return null;
     return value.replace("T", " ") + ":00";
 }
 
-// Load history
 async function loadHistory(start=null, end=null) {
 
     let url = "/history";
@@ -116,17 +205,15 @@ async function loadHistory(start=null, end=null) {
     });
 }
 
-// Apply Filter Button
 function applyFilter() {
 
     const start = formatDateTime(document.getElementById("startTime").value);
     const end = formatDateTime(document.getElementById("endTime").value);
 
-    clearInterval(autoRefresh); // stop auto refresh
+    clearInterval(autoRefresh);
     loadHistory(start, end);
 }
 
-// Download Button
 function downloadData() {
 
     const start = formatDateTime(document.getElementById("startTime").value);
@@ -143,12 +230,6 @@ function downloadData() {
 
     window.location.href = url;
 }
-
-// Back button
-function goDashboard() {
-    window.location.href = "/";
-}
-
 // Auto refresh every 2 seconds (only if no filter applied)
 autoRefresh = setInterval(() => {
 
