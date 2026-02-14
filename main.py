@@ -60,17 +60,15 @@ def upload_data(data: SensorData):
     global latest_data, history_data, last_update_time, upload_counter
 
     latest_data = data.values
-    upload_counter += 1
-    last_update_time = time.time()
 
     history_data.append({
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": data.timestamp,
         "values": data.values
     })
 
+    last_update_time = time.time()
+
     return {"message": "Data received successfully"}
-
-
 
 # ------------------------
 # LATEST DATA
