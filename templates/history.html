@@ -11,7 +11,6 @@
             color: #333;
         }
 
-        /* ===== HEADER ===== */
         .header-container {
             display: flex;
             justify-content: space-between;
@@ -25,14 +24,12 @@
         .header-container h1 {
             margin: 0;
             font-size: 26px;
-            letter-spacing: 1px;
         }
 
         .logo {
             height: 60px;
         }
 
-        /* ===== FILTER CARD ===== */
         .filter-card {
             background: white;
             margin: 30px auto;
@@ -40,11 +37,6 @@
             width: 95%;
             border-radius: 12px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-        }
-
-        .filter-card label {
-            font-weight: 600;
-            margin-right: 10px;
         }
 
         input {
@@ -60,19 +52,12 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
-            transition: 0.3s ease;
             margin-right: 10px;
         }
 
         .primary-btn {
-            background: linear-gradient(135deg, #2563eb, #1e40af);
+            background: #2563eb;
             color: white;
-            box-shadow: 0 4px 10px rgba(37,99,235,0.3);
-        }
-
-        .primary-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(37,99,235,0.5);
         }
 
         .secondary-btn {
@@ -80,20 +65,11 @@
             color: white;
         }
 
-        .secondary-btn:hover {
-            background: #059669;
-        }
-
         .danger-btn {
             background: #ef4444;
             color: white;
         }
 
-        .danger-btn:hover {
-            background: #dc2626;
-        }
-
-        /* ===== TABLE ===== */
         table {
             width: 95%;
             margin: 20px auto 40px auto;
@@ -108,7 +84,6 @@
             background: #1f2937;
             color: white;
             padding: 10px;
-            font-weight: 600;
         }
 
         td {
@@ -125,13 +100,11 @@
 
 <body>
 
-<!-- ===== HEADER ===== -->
 <div class="header-container">
-    <h1>Full Data History</h1>
+    <h1>Full Data History (Latest 50 Records)</h1>
     <img src="/static/logo.png" alt="MechNerve Logo" class="logo">
 </div>
 
-<!-- ===== FILTER SECTION ===== -->
 <div class="filter-card">
 
     <label>Start Time:</label>
@@ -148,7 +121,6 @@
 
 </div>
 
-<!-- ===== TABLE ===== -->
 <table>
     <thead>
         <tr>
@@ -162,16 +134,7 @@
     <tbody id="historyBody"></tbody>
 </table>
 
-
-<!-- ===== YOUR ORIGINAL JS (UNCHANGED LOGIC) ===== -->
 <script>
-
-let autoRefresh;
-
-function formatDateTime(value) {
-    if (!value) return null;
-    return value.replace("T", " ") + ":00";
-}
 
 async function loadHistory(start=null, end=null) {
 
@@ -187,10 +150,15 @@ async function loadHistory(start=null, end=null) {
     const response = await fetch(url);
     const data = await response.json();
 
+    renderTable(data.history);
+}
+
+function renderTable(history) {
+
     const body = document.getElementById("historyBody");
     body.innerHTML = "";
 
-    data.history.forEach(record => {
+    history.forEach(record => {
 
         let row = "<tr>";
         row += "<td>" + record.timestamp + "</td>";
@@ -218,41 +186,28 @@ async function applyFilter() {
     const formattedStart = start.replace("T", " ") + ":00";
     const formattedEnd = end.replace("T", " ") + ":00";
 
-    const response = await fetch(`/filter?start=${formattedStart}&end=${formattedEnd}`);
-    const data = await response.json();
-
-    renderTable(data.history);
+    loadHistory(formattedStart, formattedEnd);
 }
 
-function downloadCSV(data) {
+function downloadData() {
 
-    let csv = "Timestamp,";
+    const start = document.getElementById("startTime").value;
+    const end = document.getElementById("endTime").value;
 
-    for (let i = 1; i <= 16; i++) {
-        csv += "Sensor " + i + ",";
+    let url = "/download";
+
+    if (start || end) {
+        url += "?";
+        if (start) url += "start=" + start.replace("T", " ") + ":00";
+        if (start && end) url += "&";
+        if (end) url += "end=" + end.replace("T", " ") + ":00";
     }
-
-    csv += "\n";
-
-    data.forEach(row => {
-        csv += row.timestamp + ",";
-        row.values.forEach(v => csv += v + ",");
-        csv += "\n";
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "filtered_data.csv";
-    a.click();
-}
 
     window.location.href = url;
 }
-// Auto refresh every 2 seconds (only if no filter applied)
-autoRefresh = setInterval(() => {
+
+// Auto refresh only when no filter
+setInterval(() => {
 
     const start = document.getElementById("startTime").value;
     const end = document.getElementById("endTime").value;
@@ -261,7 +216,7 @@ autoRefresh = setInterval(() => {
         loadHistory();
     }
 
-}, 2000);
+}, 3000);
 
 // Initial load
 loadHistory();
