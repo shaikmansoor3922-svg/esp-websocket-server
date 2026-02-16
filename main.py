@@ -174,26 +174,41 @@ def get_history(
 @app.get("/download")
 def download_data(start: str = None, end: str = None):
 
-    filtered = history_data
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
 
-    # Filter by time if provided
+    query = "SELECT * FROM sensor_data"
+    conditions = []
+    params = []
+
     if start:
-        filtered = [d for d in filtered if d["timestamp"] >= start]
-    if end:
-        filtered = [d for d in filtered if d["timestamp"] <= end]
+        conditions.append("timestamp >= ?")
+        params.append(start)
 
-    # Create CSV in memory
+    if end:
+        conditions.append("timestamp <= ?")
+        params.append(end)
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    query += " ORDER BY id DESC"
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+
+    conn.close()
+
     output = StringIO()
     writer = csv.writer(output)
 
-    # Header
     header = ["Timestamp"] + [f"Sensor {i}" for i in range(1, 17)]
     writer.writerow(header)
 
-    # Rows
-    for record in filtered:
-        row = [record["timestamp"]] + record["values"]
-        writer.writerow(row)
+    for row in rows:
+        timestamp = row[1]
+        values = row[2:]
+        writer.writerow([timestamp] + list(values))
 
     output.seek(0)
 
