@@ -136,6 +136,15 @@
 
 <script>
 
+let autoRefresh;
+
+// Convert datetime-local to server format
+function formatDateTime(value) {
+    if (!value) return null;
+    return value.replace("T", " ") + ":00";
+}
+
+// Load history from backend
 async function loadHistory(start=null, end=null) {
 
     let url = "/history";
@@ -150,64 +159,73 @@ async function loadHistory(start=null, end=null) {
     const response = await fetch(url);
     const data = await response.json();
 
-    renderTable(data.history);
-}
-
-function renderTable(history) {
-
     const body = document.getElementById("historyBody");
     body.innerHTML = "";
 
-    history.forEach(record => {
+    data.history.forEach(record => {
 
         let row = "<tr>";
         row += "<td>" + record.timestamp + "</td>";
 
         record.values.forEach(value => {
-            row += "<td>" + value.toFixed(2) + "</td>";
+            row += "<td>" + parseFloat(value).toFixed(2) + "</td>";
         });
 
         row += "</tr>";
-
         body.innerHTML += row;
     });
 }
 
-async function applyFilter() {
+// Apply filter
+function applyFilter() {
 
-    const start = document.getElementById("startTime").value;
-    const end = document.getElementById("endTime").value;
+    const start = formatDateTime(document.getElementById("startTime").value);
+    const end = formatDateTime(document.getElementById("endTime").value);
 
     if (!start || !end) {
-        alert("Select start and end time");
+        alert("Please select both start and end time");
         return;
     }
 
-    const formattedStart = start.replace("T", " ") + ":00";
-    const formattedEnd = end.replace("T", " ") + ":00";
-
-    loadHistory(formattedStart, formattedEnd);
+    clearInterval(autoRefresh);  // stop live refresh
+    loadHistory(start, end);
 }
 
+// Download filtered data
 function downloadData() {
 
-    const start = document.getElementById("startTime").value;
-    const end = document.getElementById("endTime").value;
+    const start = formatDateTime(document.getElementById("startTime").value);
+    const end = formatDateTime(document.getElementById("endTime").value);
 
     let url = "/download";
 
     if (start || end) {
         url += "?";
-        if (start) url += "start=" + start.replace("T", " ") + ":00";
+        if (start) url += "start=" + start;
         if (start && end) url += "&";
-        if (end) url += "end=" + end.replace("T", " ") + ":00";
+        if (end) url += "end=" + end;
     }
 
-    window.location.href = url;
+    // Trigger download
+    window.open(url, "_blank");
+
+    // 🔥 After download → reset to latest view
+    setTimeout(() => {
+
+        document.getElementById("startTime").value = "";
+        document.getElementById("endTime").value = "";
+
+        loadHistory();  // load latest 50 records
+
+        autoRefresh = setInterval(() => {
+            loadHistory();
+        }, 2000);
+
+    }, 1000);
 }
 
-// Auto refresh only when no filter
-setInterval(() => {
+// Auto refresh (only when no filter applied)
+autoRefresh = setInterval(() => {
 
     const start = document.getElementById("startTime").value;
     const end = document.getElementById("endTime").value;
@@ -216,7 +234,7 @@ setInterval(() => {
         loadHistory();
     }
 
-}, 3000);
+}, 2000);
 
 // Initial load
 loadHistory();
